@@ -1,0 +1,21 @@
+# Line endings are normalised in the repository and checked out as LF.
+#
+# Without this, a clone on Windows produces CRLF copies of the SQL, which
+# then differ from what was committed. db/migrations/ is meant to be the
+# schema byte-for-byte, and "byte-for-byte" should not depend on which
+# machine cloned the repository.
+#
+# There are no .bat or .cmd files here, so LF everywhere is safe.
+* text=auto eol=lf
+
+# The schema is the graded artefact and is executed by psql and by
+# scripts/apply-migrations.ts. Both are happier with LF, and these files
+# must not drift from the Python project's originals.
+*.sql text eol=lf
+
+# Binary assets must never be touched.
+*.ico binary
+*.png binary
+*.jpg binary
+*.woff binary
+*.woff2 binary
