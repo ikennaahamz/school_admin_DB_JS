@@ -84,7 +84,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {counts.map((tile) => (
-          <div className="rounded-md border border-slate-200 p-3" key={tile.table} title={tile.error}>
+          <div
+            className="rounded-md border border-slate-200 p-3"
+            data-testid="metric-tile"
+            key={tile.table}
+            title={tile.error}
+          >
             <p className="text-xs text-slate-500">{tile.label}</p>
             <p className="text-xl font-semibold tabular-nums text-slate-900">{tile.count}</p>
           </div>

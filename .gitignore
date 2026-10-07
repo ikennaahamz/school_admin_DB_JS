@@ -39,7 +39,8 @@ yarn-error.log*
 .env*
 !.env.example
 
-# diagnostics transcripts
+# Playwright cached session state and run artefacts
+/.auth
 /.logs
 
 # vercel
@@ -48,3 +49,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
