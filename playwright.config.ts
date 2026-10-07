@@ -48,9 +48,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // A small number deliberately. Each worker drives a real browser against one
-  // dev server, and every screen renders real database queries.
-  workers: process.env.CI ? 1 : 3,
+  // Two, deliberately. Each worker drives a real browser against one server,
+  // and a cost-12 bcrypt verify blocks that server's event loop for ~600 ms.
+  // At three workers the suite was fast but the real sign-in tests in
+  // login.spec.ts failed intermittently; at two it is both quicker than
+  // serial and stable across consecutive runs.
+  workers: process.env.CI ? 1 : 2,
   reporter: [["list"]],
 
   use: {
@@ -73,6 +76,18 @@ export default defineConfig({
     // would actually be deployed is both more honest and steadier.
     command: "npm run build && npx next start -p " + PORT,
     url: `http://localhost:${PORT}/login`,
+    env: {
+      // Headroom for the test server only.
+      //
+      // Every page render opens several queries, and one server process is
+      // shared by every browser. At the production default of 5
+      // connections, pool.connect() started hitting its 10 s timeout under
+      // that load, which surfaced as an intermittent page failure in the
+      // sign-in tests rather than as an obvious pool error. The
+      // production default stays conservative; the test server does not
+      // have to be.
+      DB_POOL_MAX: "20",
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
     stdout: "ignore",
