@@ -61,6 +61,7 @@ All demo accounts use the password `Passw0rd!`:
 | `DB_TARGET` | no | `local` to use `LOCAL_DATABASE_URL`. Defaults to the cloud database. |
 | `LOCAL_DATABASE_URL` | no | Local PostgreSQL, for development. |
 | `DB_POOL_MAX` | no | Pool size. Defaults to 5. |
+| `DB_CONNECT_TIMEOUT_MS` | no | Connect timeout. Defaults to 45000, sized for a cold Neon resume. |
 
 `.env` is git-ignored. **No secret is ever read from source**: `lib/db.ts` reads
 `process.env` only, so there is no literal to commit. If you need to compare two
@@ -189,10 +190,29 @@ environment settings; leave `DATABASE_URL_UNPOOLED` unset unless you run
 migrations from CI. `SESSION_SECRET` must be stable across deploys — changing it
 invalidates every session, which is the intended behaviour when rotating it.
 
-One caveat worth stating: bcryptjs costs ~600 ms of CPU per sign-in and blocks
+### Neon scales to zero, and on the free plan you cannot stop it
+
+Neon's compute sleeps after **five minutes of inactivity**, and disabling that
+requires a paid plan. Two consequences for a deployed app:
+
+- The first request after a quiet period arrives while Postgres is resuming.
+  A cold resume routinely takes longer than a default connection timeout, so
+  `lib/db.ts` allows 45 s (`DB_CONNECT_TIMEOUT_MS`) and every route sets
+  `maxDuration = 60` to stay alive long enough for it.
+- **Vercel may cap `maxDuration` below 60 s depending on plan.** If the
+  dashboard reports a duration ceiling, either raise the plan or lower
+  `DB_CONNECT_TIMEOUT_MS` to match it — otherwise the invocation is killed
+  before the connection is attempted.
+
+For a demonstration this matters more than it sounds: an examiner opening the
+link ten minutes after the last visit may hit the cold path. If that is a
+concern, upgrading the Neon plan removes the whole problem and the timeouts
+above become a safety margin rather than a requirement.
+
+Two caveats worth stating. bcryptjs costs ~600 ms of CPU per sign-in and blocks
 the event loop while it runs, so a low-cost serverless instance will feel it.
-The session cookie is stateless and signed, so there is no server-side session
-store to scale.
+And the session cookie is stateless and signed, so there is no server-side
+session store to scale.
 
 ## Known limitations
 

@@ -273,7 +273,18 @@ function pool(): Pool {
       // free headroom, it is a way to be disconnected. Overridable with
       // DB_POOL_MAX for a paid tier.
       max: Number(process.env.DB_POOL_MAX ?? 5),
-      connectionTimeoutMillis: 10_000,
+      // Generous, because the managed Postgres this points at scales to
+      // zero after five minutes of inactivity and the setting cannot be
+      // turned off below the paid plan. A cold request arrives while the
+      // database is still resuming, which routinely takes longer than the
+      // previous 10 s, so a short timeout turned a working deployment into
+      // "Could not connect to the database" precisely when somebody first
+      // visited it.
+      //
+      // The trade is that a genuinely unreachable host now takes this long
+      // to report. `scripts/check-db.ts` uses a 15 s timeout of its own, so
+      // diagnostics stay quick.
+      connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS ?? 45_000),
       idleTimeoutMillis: 30_000,
     });
 
