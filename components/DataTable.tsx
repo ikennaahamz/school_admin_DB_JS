@@ -31,16 +31,30 @@
 
 import { useMemo, useState } from "react";
 
-export type Column<T> = {
+export type Column = {
   key: string;
   header: string;
   /** Compare and align as a number. See the note above. */
   numeric?: boolean;
-  /** Render a cell. Falls back to plain text. */
-  render?: (row: T) => React.ReactNode;
   /** Values that should not participate in sorting are handled per-cell. */
   sortable?: boolean;
 };
+
+/**
+ * Note what this type deliberately does NOT have: a `render` function.
+ *
+ * An earlier version allowed one, and it looked useful. It cannot work
+ * from a Server Component, because `DataTable` is `"use client"` and a
+ * function cannot cross the server/client boundary -- the page fails with
+ * "Functions cannot be passed directly to Client Components". Screens only
+ * got away with it by never passing one, which is exactly the kind of trap
+ * that waits for the next person.
+ *
+ * A cell needing custom markup belongs in a table written in the screen
+ * itself, which is what the CRUD delete tabs and the admin accounts table
+ * do. Server actions *can* cross the boundary, so a form in a cell is
+ * fine; it is only function-valued props that break.
+ */
 
 type Sort = { key: string; direction: "asc" | "desc" } | null;
 
@@ -51,7 +65,7 @@ export function DataTable<T extends Record<string, unknown>>({
   maxHeight = 420,
   caption,
 }: {
-  columns: Column<T>[];
+  columns: Column[];
   rows: T[];
   empty?: string;
   maxHeight?: number;
@@ -134,7 +148,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   }`}
                   key={column.key}
                 >
-                  {column.render ? column.render(row) : format(row[column.key], column.numeric === true)}
+                  {format(row[column.key], column.numeric === true)}
                 </td>
               ))}
             </tr>

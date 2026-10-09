@@ -5,6 +5,12 @@
  * activating an account, granting a role and creating a user are all
  * actions worth attributing, and `app.user` is what the grade trigger
  * reads and what these rows are read back against.
+ *
+ * Ordering is by user_id, not username. The seeded usernames read like
+ * numbers -- student23, student24, student25, student3, student4 -- so
+ * ordering them as text produces a list that looks broken and pushes the
+ * recently created accounts to the bottom, which is exactly where an
+ * administrator least wants to see the ones awaiting activation.
  */
 
 import { hashPassword } from "@/lib/auth";
@@ -44,7 +50,7 @@ export async function listUsers(): Promise<UserRow[]> {
           LEFT JOIN instructors i ON i.user_id = u.user_id
          GROUP BY u.user_id, u.username, u.email, u.first_name,
                   u.last_name, u.status, u.created_at
-         ORDER BY u.username
+         ORDER BY u.user_id
         `,
   );
 }

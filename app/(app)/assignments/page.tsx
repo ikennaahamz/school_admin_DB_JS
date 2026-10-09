@@ -142,6 +142,11 @@ async function DeleteTab() {
 async function SubmissionsTab() {
   const rows = await listSubmissions();
 
+  // is_late comes back as a boolean, which would render as "true"/"false".
+  // DataTable has no cell renderer by design -- see the note on Column --
+  // so the display value is prepared here instead.
+  const display = rows.map((row) => ({ ...row, is_late: row.is_late ? "yes" : "no" }));
+
   return (
     <DataTable
       caption="Submissions"
@@ -153,9 +158,9 @@ async function SubmissionsTab() {
         { key: "submitted_at", header: "Submitted" },
         { key: "score", header: "Score", numeric: true },
         { key: "pct", header: "%", numeric: true },
-        { key: "is_late", header: "Late", render: (row) => (row.is_late ? "yes" : "no") },
+        { key: "is_late", header: "Late" },
       ]}
-      rows={rows as unknown as Record<string, unknown>[]}
+      rows={display as unknown as Record<string, unknown>[]}
     />
   );
 }
